@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Job automation - google alerts</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <style>
+    .link {
+        font-size: 10px;
+        text-transform: uppercase;
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Job Automation <small>google alerts</small></h1>
+                <table id="info" class="table"></table>
+                <hr>
+                <footer>
+                    <p class="text-center">Built using <a target="_blank" href="http://spreadsheets.google.com">Google Sheets</a> and <a target="_blank" href="https://github.com/chriszarate/sheetrock">Sheetrock</a></p>
+                </footer>
+            </div>
+        </div>
+    </div>
+    <!-- http://chriszarate.github.io/sheetrock/ -->
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="sheetrock.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            var url = 'https://docs.google.com/spreadsheets/d/1S5z5J0QYsu9kWnq3BE4w0hMRFPRnfu5aPbayBb2TrDw/edit#gid=0';
+
+            function formatDate(date) {
+                return date.split('at').join('<br />');
+            }
+
+            function formatDetails(lines) {
+                // Strip out google alerts text.
+                var bad = [
+                    'Flag as irrelevant',
+                    'Edit this alert',
+                    '"job automation"',
+                    'NEWS',
+                    'WEB',
+                    'See more results  | Edit this alert',
+                    'You have received this email because you have subscribed to Google Alerts.',
+                    'Receive this alert as RSS feed',
+                    'Unsubscribe | View all your alerts',
+                    'Send Feedback'
+                ];
+                var string = '';
+                $.each(lines, function(k, line){
+                    line = $.trim(line);
+                    console.log(line);
+                    if(line.length > 0 && $.inArray(line, bad) === -1 && !line.startsWith('Daily update')) {
+                        // 5, 7, 9, 11 are the remaining indices.
+                        if(k === 5) {
+                            string += '<h4>' + line + '</h4>';
+                        } else if(k === 7) {
+                            string += '<p class="lead">' + line + ' <small class="link"><a target="_blank" href="http://www.google.com/?q=' + line + '">(Search)</a></small></p>';
+                        } else {
+                            string += '<p>' + line + '</p>';
+                        }
+                    }
+                });
+                return string;
+            }
+
+            sheetrock({
+                url: url,
+                query: "select A,D",
+                callback: function(error, options, resource){
+                    if(!resource) return;
+                    $.each(resource['rows'], function(k, row){
+                        // Skip header
+                        if(k > 0) {
+                            // Custom format rows/cells
+                            var $row = $('<tr></tr>');
+                            // console.log(row);
+                            $.each(row['cells'], function(name, cell){
+                                var data = '';
+                                // Details is auto generated as a blob from IFTT
+                                // and is clunky and has to be manually parsed.
+                                if(name === 'Details') {
+                                    data = formatDetails(cell.split('\n'));
+                                    console.log(data);
+                                    $row.append('<td width="85%">' + data + '</td>');
+                                } else {
+                                    data = formatDate(cell);
+                                    $row.append('<td width="15%">' + data + '</td>');
+                                }
+                            });
+                            $('#info').append($row);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

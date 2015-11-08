@@ -53,7 +53,6 @@
                 var string = '';
                 $.each(lines, function(k, line){
                     line = $.trim(line);
-                    console.log(line);
                     if(line.length > 0 && $.inArray(line, bad) === -1 && !line.startsWith('Daily update')) {
                         // 5, 7, 9, 11 are the remaining indices.
                         if(k === 5) {
@@ -72,20 +71,19 @@
                 url: url,
                 query: "select A,D",
                 callback: function(error, options, resource){
+                    console.log(resource);
                     if(!resource) return;
                     $.each(resource['rows'], function(k, row){
                         // Skip header
                         if(k > 0) {
                             // Custom format rows/cells
                             var $row = $('<tr></tr>');
-                            // console.log(row);
                             $.each(row['cells'], function(name, cell){
                                 var data = '';
                                 // Details is auto generated as a blob from IFTT
                                 // and is clunky and has to be manually parsed.
                                 if(name === 'Details') {
                                     data = formatDetails(cell.split('\n'));
-                                    console.log(data);
                                     $row.append('<td width="85%">' + data + '</td>');
                                 } else {
                                     data = formatDate(cell);
